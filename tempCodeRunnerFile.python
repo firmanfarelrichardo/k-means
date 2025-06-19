@@ -1,0 +1,136 @@
+import heapq
+
+# 1. Dataset Rute dalam bentuk Graph (Dictionary)
+# Struktur: 'KotaAsal': [('KotaTujuan', {'distance': km, 'time': jam, 'cost': Rp}), ...]
+graph = {
+    'Lampung': [
+        ('Palembang', {'distance': 360, 'time': 4.0, 'cost': 349500}),
+        ('Baturaja', {'distance': 230, 'time': 4.6, 'cost': 0}),
+        ('Krui', {'distance': 245, 'time': 4.9, 'cost': 0}),
+    ],
+    'Palembang': [
+        ('Jambi', {'distance': 280, 'time': 4.2, 'cost': 112000}),
+        ('Lubuk Linggau', {'distance': 320, 'time': 6.4, 'cost': 0}),
+    ],
+    'Baturaja': [('Lubuk Linggau', {'distance': 215, 'time': 4.3, 'cost': 0})],
+    'Krui': [('Bengkulu', {'distance': 260, 'time': 5.2, 'cost': 0})],
+    'Jambi': [
+        ('Pekanbaru', {'distance': 395, 'time': 7.9, 'cost': 0}),
+        ('Bukittinggi', {'distance': 450, 'time': 9.0, 'cost': 0}),
+    ],
+    'Lubuk Linggau': [('Bukittinggi', {'distance': 430, 'time': 8.6, 'cost': 0})],
+    'Bengkulu': [('Padang', {'distance': 460, 'time': 9.2, 'cost': 0})],
+    'Pekanbaru': [('Rantau Prapat', {'distance': 380, 'time': 5.8, 'cost': 90000})],
+    'Bukittinggi': [('Padang Sidempuan', {'distance': 230, 'time': 4.6, 'cost': 0})],
+    'Padang': [('Padang Sidempuan', {'distance': 290, 'time': 5.8, 'cost': 0})],
+    'Rantau Prapat': [('Medan', {'distance': 275, 'time': 3.8, 'cost': 85000})],
+    'Padang Sidempuan': [('Medan', {'distance': 330, 'time': 6.6, 'cost': 0})],
+    'Medan': [] # Tujuan akhir
+}
+
+# 2. Heuristik (Estimasi waktu ke tujuan)
+# h(n): estimasi waktu dari sebuah kota ke Medan (misal, berdasarkan jarak lurus / asumsi kecepatan terbaik)
+# Ini membantu A* untuk memprioritaskan jalur yang lebih mengarah ke tujuan.
+heuristics = {
+    'Lampung': 15.0,
+    'Palembang': 11.0,
+    'Baturaja': 13.0,
+    'Krui': 15.0,
+    'Jambi': 8.0,
+    'Lubuk Linggau': 10.0,
+    'Bengkulu': 12.0,
+    'Pekanbaru': 5.0,
+    'Bukittinggi': 7.0,
+    'Padang': 9.0,
+    'Rantau Prapat': 3.5,
+    'Padang Sidempuan': 6.0,
+    'Medan': 0
+}
+
+def a_star_search(graph, start, goal, cost_type='time'):
+    """
+    Fungsi A* Search untuk mencari rute optimal.
+    cost_type bisa 'time' untuk rute tercepat, atau 'cost' untuk rute termurah.
+    """
+    # Priority queue untuk menyimpan (total_cost, current_city, path)
+    # Total cost adalah f(n) = g(n) + h(n)
+    open_set = [(0, start, [])]
+    
+    # Dictionary untuk menyimpan g_score (biaya terendah dari start ke kota ini)
+    g_score = {city: float('inf') for city in graph}
+    g_score[start] = 0
+    
+    # Dictionary untuk menyimpan path optimal
+    came_from = {}
+
+    while open_set:
+        # Ambil kota dengan f_score terendah dari priority queue
+        _, current, path = heapq.heappop(open_set)
+        
+        # Rekonstruksi path saat ini
+        current_path = path + [current]
+
+        if current == goal:
+            # Jika tujuan tercapai, kembalikan path dan total biayanya
+            total_cost = g_score[goal]
+            return current_path, total_cost
+
+        for neighbor, data in graph.get(current, []):
+            # Hitung g_score sementara ke tetangga
+            # Ini adalah g(n) dari node saat ini
+            tentative_g_score = g_score[current] + data[cost_type]
+
+            if tentative_g_score < g_score[neighbor]:
+                # Jika path ini lebih baik dari yang pernah tercatat
+                g_score[neighbor] = tentative_g_score
+                
+                # Hitung f_score = g(n) + h(n)
+                # Untuk biaya (cost), heuristik bisa diabaikan (dianggap 0) karena tidak ada cara
+                # yang baik untuk mengestimasinya. Ini membuatnya mirip dengan Algoritma Dijkstra.
+                h_score = heuristics[neighbor] if cost_type == 'time' else 0
+                f_score = tentative_g_score + h_score
+                
+                # Tambahkan ke priority queue untuk dieksplorasi
+                heapq.heappush(open_set, (f_score, neighbor, current_path))
+                
+    return "Rute tidak ditemukan", float('inf')
+
+
+# --- Eksekusi Utama ---
+start_city = 'Lampung'
+goal_city = 'Medan'
+
+print("Mencari rute optimal dari Lampung ke Medan...")
+print("-" * 40)
+
+# 1. Mencari Rute Tercepat (berdasarkan waktu)
+fastest_path, fastest_time = a_star_search(graph, start_city, goal_city, cost_type='time')
+if fastest_path != "Rute tidak ditemukan":
+    # Hitung total biaya tol dan jarak untuk rute tercepat
+    total_cost_fastest = sum(graph[fastest_path[i]][j][1]['cost'] for i in range(len(fastest_path)-1) for j in range(len(graph[fastest_path[i]])) if graph[fastest_path[i]][j][0] == fastest_path[i+1])
+    total_dist_fastest = sum(graph[fastest_path[i]][j][1]['distance'] for i in range(len(fastest_path)-1) for j in range(len(graph[fastest_path[i]])) if graph[fastest_path[i]][j][0] == fastest_path[i+1])
+    
+    print("✅ Rute TERCEPAT (Berdasarkan Waktu Tempuh)")
+    print(f"   Jalur       : {' -> '.join(fastest_path)}")
+    print(f"   Total Waktu : {fastest_time:.2f} jam")
+    print(f"   Total Jarak : {total_dist_fastest} km")
+    print(f"   Estimasi Biaya Tol: Rp {total_cost_fastest:,}")
+else:
+    print("Rute tercepat tidak ditemukan.")
+
+print("-" * 40)
+
+# 2. Mencari Rute Termurah (berdasarkan biaya tol)
+cheapest_path, cheapest_cost = a_star_search(graph, start_city, goal_city, cost_type='cost')
+if cheapest_path != "Rute tidak ditemukan":
+    # Hitung total waktu dan jarak untuk rute termurah
+    total_time_cheapest = sum(graph[cheapest_path[i]][j][1]['time'] for i in range(len(cheapest_path)-1) for j in range(len(graph[cheapest_path[i]])) if graph[cheapest_path[i]][j][0] == cheapest_path[i+1])
+    total_dist_cheapest = sum(graph[cheapest_path[i]][j][1]['distance'] for i in range(len(cheapest_path)-1) for j in range(len(graph[cheapest_path[i]])) if graph[cheapest_path[i]][j][0] == cheapest_path[i+1])
+    
+    print("✅ Rute TERMURAH (Berdasarkan Biaya Tol)")
+    print(f"   Jalur       : {' -> '.join(cheapest_path)}")
+    print(f"   Estimasi Biaya Tol: Rp {cheapest_cost:,}")
+    print(f"   Total Waktu : {total_time_cheapest:.2f} jam")
+    print(f"   Total Jarak : {total_dist_cheapest} km")
+else:
+    print("Rute termurah tidak ditemukan.")
