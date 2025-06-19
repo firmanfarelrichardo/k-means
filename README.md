@@ -1,12 +1,5 @@
 # Analisis Pola Perilaku Pelanggan Berdasarkan Pendapatan dan Skor Pengeluaran Menggunakan Metode K-Means Clustering
 
-> Proyek ini dibuat oleh:
-> - **Nama:** Firman Farel Richardo
-> - **NPM:** 2315061099
-> - **Kelas:** PSTI-C
-> - **Email:** farelpasaribu04@gmail.com
-> - **Universitas Lampung**
-
 ## Ringkasan Program
 
 Proyek ini bertujuan untuk melakukan segmentasi pelanggan (customer segmentation) berdasarkan data perilaku mereka di sebuah mal. Dengan menggunakan algoritma **K-Means Clustering**, program ini mengelompokkan pelanggan ke dalam beberapa segmen berbeda berdasarkan dua fitur utama: **Pendapatan Tahunan (`Annual Income`)** dan **Skor Pengeluaran (`Spending Score`)**.
